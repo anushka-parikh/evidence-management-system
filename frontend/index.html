@@ -416,9 +416,20 @@ async function transferEvidence() {
     const id = document.getElementById("transferIdInput").value;
     const addr = document.getElementById("transferAddressInput").value;
     showResult("transferResult", "Submitting transfer...", "pending");
-    const tx = await contract.transfer(id, addr);
-    await tx.wait();
-    showResult("transferResult", "Custody transferred. Tx: " + tx.hash, "success");
+    const tx = await contract.create(text);
+    const receipt = await tx.wait();
+    const event = receipt.events.find(e => e.event === "EvidenceCreated");
+    const evidenceId = event.args.id.toString();
+    showResult(
+      "createResult",
+      `Evidence Created Successfully!
+
+    Evidence ID: ${evidenceId}
+
+    Transaction Hash:
+    ${tx.hash}`,
+      "success"
+    );
   } catch (error) {
     console.error(error);
     showResult("transferResult", "Failed: " + (error.reason || error.message), "error");
