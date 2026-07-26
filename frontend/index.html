@@ -18,7 +18,7 @@
 
     .container {
       width: 100%;
-      max-width: 520px;
+      max-width: 560px;
     }
 
     header {
@@ -46,7 +46,7 @@
       border: 0.5px solid #e0e0dc;
       border-radius: 12px;
       padding: 14px 18px;
-      margin-bottom: 2rem;
+      margin-bottom: 1.5rem;
     }
 
     #account {
@@ -63,11 +63,56 @@
       font-weight: 500;
     }
 
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      background: #eceae5;
+      border-radius: 10px;
+      padding: 4px;
+      margin-bottom: 1.5rem;
+    }
+
+    .tab-btn {
+      flex: 1;
+      height: 36px;
+      padding: 0 12px;
+      border: none;
+      border-radius: 7px;
+      background: transparent;
+      font-size: 13px;
+      font-family: inherit;
+      font-weight: 500;
+      color: #777;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .tab-btn:hover {
+      color: #1a1a1a;
+    }
+
+    .tab-btn.active {
+      background: #fff;
+      color: #1a1a1a;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
     .card {
       background: #fff;
       border: 0.5px solid #e0e0dc;
       border-radius: 12px;
       padding: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       margin-bottom: 1rem;
     }
 
@@ -77,7 +122,15 @@
       text-transform: uppercase;
       letter-spacing: 0.08em;
       color: #323232;
-      margin-bottom: 1rem;
+    }
+
+    .card-header h2 { margin-bottom: 0; }
+
+    .btn-small {
+      height: 28px;
+      padding: 0 12px;
+      font-size: 12px;
+      border-radius: 6px;
     }
 
     .input-row {
@@ -140,6 +193,12 @@
       transform: scale(0.98);
     }
 
+    button:disabled {
+      opacity: 0.5;
+      cursor: default;
+      transform: none;
+    }
+
     .btn-primary {
       background: #1a1a1a;
       color: #fff;
@@ -162,6 +221,7 @@
       word-break: break-all;
       display: none;
       line-height: 1.5;
+      white-space: pre-wrap;
     }
 
     .result-box.visible { display: block; }
@@ -183,6 +243,62 @@
       background: #fafaf8;
       border-color: #e0e0dc;
     }
+
+    /* Dashboard */
+    .evidence-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .evidence-item {
+      border: 0.5px solid #e0e0dc;
+      border-radius: 8px;
+      padding: 10px 12px;
+      background: #fafaf8;
+    }
+
+    .evidence-item-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .evidence-id {
+      font-size: 12px;
+      font-weight: 600;
+      color: #1a1a1a;
+      background: #eceae5;
+      border-radius: 5px;
+      padding: 2px 7px;
+    }
+
+    .evidence-owner {
+      font-size: 11px;
+      color: #888;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    .evidence-meta {
+      font-size: 13px;
+      color: #333;
+      word-break: break-all;
+    }
+
+    .empty-state {
+      font-size: 13px;
+      color: #999;
+      padding: 8px 0;
+    }
+
+    .hint {
+      font-size: 12px;
+      color: #999;
+      margin-top: 10px;
+      line-height: 1.5;
+    }
   </style>
 </head>
 
@@ -199,64 +315,97 @@
     <button class="btn-primary" onclick="connectWallet()">Connect</button>
   </div>
 
-  <div class="card">
-    <h2>Create Evidence</h2>
-    <div class="input-row">
-      <input type="text" id="evidenceInput" placeholder="Evidence name or metadata hash">
-      <button onclick="createEvidence()">Submit</button>
-    </div>
-    <div id="createResult" class="result-box"></div>
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="dashboard" onclick="switchTab('dashboard')">Dashboard</button>
+    <button class="tab-btn" data-tab="actions" onclick="switchTab('actions')">Actions</button>
   </div>
 
-  <div class="card">
-    <h2>Read Evidence</h2>
-    <div class="input-row">
-      <input type="number" id="readId" placeholder="Evidence ID">
-      <button onclick="readEvidence()">Fetch</button>
-    </div>
-    <div id="readResult" class="result-box"></div>
-  </div>
+  <!-- DASHBOARD TAB -->
+  <div id="dashboardTab" class="tab-panel active">
 
-  <div class="card">
-    <h2>Get Owner</h2>
-    <div class="input-row">
-      <input type="number" id="ownerIdInput" placeholder="Evidence ID">
-      <button onclick="getOwner()">Lookup</button>
-    </div>
-    <div id="ownerResult" class="result-box"></div>
-  </div>
-
-  <div class="card">
-    <h2>Grant Access</h2>
-    <div class="input-stack">
-      <input type="number" id="grantIdInput" placeholder="Evidence ID">
-      <div class="input-row">
-        <input type="text" id="grantAddressInput" placeholder="Authorized address (0x...)">
-        <button onclick="grantAccess()">Grant</button>
+    <div class="card">
+      <div class="card-header">
+        <h2>My Evidence (Owned)</h2>
+        <button class="btn-small" onclick="loadDashboard()">Refresh</button>
+      </div>
+      <div id="ownedList" class="evidence-list">
+        <p class="empty-state">Connect your wallet to see evidence you own.</p>
       </div>
     </div>
-    <div id="grantResult" class="result-box"></div>
-  </div>
 
-  <div class="card">
-    <h2>Request Access</h2>
-    <div class="input-row">
-      <input type="number" id="requestIdInput" placeholder="Evidence ID">
-      <button onclick="requestAccess()">Request</button>
-    </div>
-    <div id="requestResult" class="result-box"></div>
-  </div>
-
-  <div class="card">
-    <h2>Transfer Custody</h2>
-    <div class="input-stack">
-      <input type="number" id="transferIdInput" placeholder="Evidence ID">
-      <div class="input-row">
-        <input type="text" id="transferAddressInput" placeholder="New custodian address (0x...)">
-        <button onclick="transferEvidence()">Transfer</button>
+    <div class="card">
+      <h2>Shared With Me (Read Access)</h2>
+      <div id="accessibleList" class="evidence-list">
+        <p class="empty-state">Connect your wallet to see evidence shared with you.</p>
       </div>
+      <p class="hint">Evidence you've been granted access to, but don't own.</p>
     </div>
-    <div id="transferResult" class="result-box"></div>
+
+  </div>
+
+  <!-- ACTIONS TAB -->
+  <div id="actionsTab" class="tab-panel">
+
+    <div class="card">
+      <h2>Create Evidence</h2>
+      <div class="input-row">
+        <input type="text" id="evidenceInput" placeholder="Evidence name or metadata hash">
+        <button onclick="createEvidence()">Submit</button>
+      </div>
+      <div id="createResult" class="result-box"></div>
+    </div>
+
+    <div class="card">
+      <h2>Read Evidence</h2>
+      <div class="input-row">
+        <input type="number" id="readId" placeholder="Evidence ID">
+        <button onclick="readEvidence()">Fetch</button>
+      </div>
+      <div id="readResult" class="result-box"></div>
+    </div>
+
+    <div class="card">
+      <h2>Get Owner</h2>
+      <div class="input-row">
+        <input type="number" id="ownerIdInput" placeholder="Evidence ID">
+        <button onclick="getOwner()">Lookup</button>
+      </div>
+      <div id="ownerResult" class="result-box"></div>
+    </div>
+
+    <div class="card">
+      <h2>Grant Access</h2>
+      <div class="input-stack">
+        <input type="number" id="grantIdInput" placeholder="Evidence ID">
+        <div class="input-row">
+          <input type="text" id="grantAddressInput" placeholder="Authorized address (0x...)">
+          <button onclick="grantAccess()">Grant</button>
+        </div>
+      </div>
+      <div id="grantResult" class="result-box"></div>
+    </div>
+
+    <div class="card">
+      <h2>Request Access</h2>
+      <div class="input-row">
+        <input type="number" id="requestIdInput" placeholder="Evidence ID">
+        <button onclick="requestAccess()">Request</button>
+      </div>
+      <div id="requestResult" class="result-box"></div>
+    </div>
+
+    <div class="card">
+      <h2>Transfer Custody</h2>
+      <div class="input-stack">
+        <input type="number" id="transferIdInput" placeholder="Evidence ID">
+        <div class="input-row">
+          <input type="text" id="transferAddressInput" placeholder="New custodian address (0x...)">
+          <button onclick="transferEvidence()">Transfer</button>
+        </div>
+      </div>
+      <div id="transferResult" class="result-box"></div>
+    </div>
+
   </div>
 
 </div>
@@ -266,9 +415,14 @@
 <script>
 
 let contract;
+let currentAccount = null;
 
-const contractAddress = "0x5B9295a39D453Ba54EfEf5b7651b934FD7373e56";
-//updated abi
+// TODO: replace with the address of your redeployed EvidenceManagementSystem
+// contract (the updated Evidence.sol adds getOwnedEvidence/getAccessibleEvidence,
+// which changes the contract's bytecode, so the old deployment at
+// 0x5B9295a39D453Ba54EfEf5b7651b934FD7373e56 does NOT have these functions).
+const contractAddress = "PASTE_YOUR_NEW_CONTRACT_ADDRESS_HERE";
+
 const abi = [
   {
     "anonymous": false,
@@ -463,6 +617,44 @@ const abi = [
     ],
     "stateMutability": "view",
     "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "getOwnedEvidence",
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "",
+        "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "getAccessibleEvidence",
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "",
+        "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
   }
 ];
 
@@ -470,6 +662,28 @@ function showResult(id, message, type) {
   const el = document.getElementById(id);
   el.innerText = message;
   el.className = "result-box visible " + (type || "");
+}
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.innerText = str == null ? "" : String(str);
+  return div.innerHTML;
+}
+
+function shortAddr(addr) {
+  return addr.slice(0, 6) + "..." + addr.slice(-4);
+}
+
+function switchTab(tab) {
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.tab === tab);
+  });
+  document.getElementById("dashboardTab").classList.toggle("active", tab === "dashboard");
+  document.getElementById("actionsTab").classList.toggle("active", tab === "actions");
+
+  if (tab === "dashboard" && contract) {
+    loadDashboard();
+  }
 }
 
 async function connectWallet() {
@@ -480,13 +694,33 @@ async function connectWallet() {
     const signer = provider.getSigner();
     contract = new ethers.Contract(contractAddress, abi, signer);
     const address = await signer.getAddress();
+    currentAccount = address;
     const el = document.getElementById("account");
-    el.innerText = address.slice(0, 6) + "..." + address.slice(-4);
+    el.innerText = shortAddr(address);
     el.classList.add("connected");
+
+    loadDashboard();
+
+    // Reload dashboard if the user switches accounts in MetaMask
+    if (window.ethereum.removeListener) {
+      window.ethereum.removeListener("accountsChanged", handleAccountsChanged);
+    }
+    window.ethereum.on("accountsChanged", handleAccountsChanged);
   } catch (error) {
     console.error(error);
     alert("Error: " + error.message);
   }
+}
+
+async function handleAccountsChanged(accounts) {
+  if (!accounts || accounts.length === 0) {
+    currentAccount = null;
+    const el = document.getElementById("account");
+    el.innerText = "No wallet connected";
+    el.classList.remove("connected");
+    return;
+  }
+  await connectWallet();
 }
 
 async function createEvidence() {
@@ -536,6 +770,8 @@ async function createEvidence() {
                 "success"
             );
         }
+
+        loadDashboard();
 
     } catch (error) {
         console.error(error);
@@ -606,24 +842,94 @@ async function transferEvidence() {
     const id = document.getElementById("transferIdInput").value;
     const addr = document.getElementById("transferAddressInput").value;
     showResult("transferResult", "Submitting transfer...", "pending");
-    const tx = await contract.create(text);
-    const receipt = await tx.wait();
-    const event = receipt.events.find(e => e.event === "EvidenceCreated");
-    const evidenceId = event.args.id.toString();
-    showResult(
-      "createResult",
-      `Evidence Created Successfully!
-
-    Evidence ID: ${evidenceId}
-
-    Transaction Hash:
-    ${tx.hash}`,
-      "success"
-    );
+    const tx = await contract.transfer(id, addr);
+    await tx.wait();
+    showResult("transferResult", "Custody transferred. Tx: " + tx.hash, "success");
+    loadDashboard();
   } catch (error) {
     console.error(error);
     showResult("transferResult", "Failed: " + (error.reason || error.message), "error");
   }
+}
+
+/* ---------------- Dashboard ---------------- */
+
+async function loadDashboard() {
+  if (!contract || !currentAccount) return;
+
+  const ownedEl = document.getElementById("ownedList");
+  const accessibleEl = document.getElementById("accessibleList");
+  ownedEl.innerHTML = '<p class="empty-state">Loading...</p>';
+  accessibleEl.innerHTML = '<p class="empty-state">Loading...</p>';
+
+  try {
+    // Both lists come straight from the contract's own indexes now — O(1)
+    // storage reads, no event-log scanning required.
+    const [ownedIdsRaw, accessibleIdsRaw] = await Promise.all([
+      contract.getOwnedEvidence(currentAccount),
+      contract.getAccessibleEvidence(currentAccount)
+    ]);
+
+    const ownedIds = ownedIdsRaw.map(id => id.toString());
+    const ownedIdSet = new Set(ownedIds);
+
+    // getAccessibleEvidence is append-only and can in rare cases overlap with
+    // ownership (e.g. access granted, then evidence transferred back to the
+    // same address) — filter those out so "Shared With Me" stays strictly
+    // "accessible but not owned".
+    const accessibleOnlyIds = accessibleIdsRaw
+      .map(id => id.toString())
+      .filter(id => !ownedIdSet.has(id));
+
+    const [ownedItems, accessibleItems] = await Promise.all([
+      Promise.all(ownedIds.map(id => buildEvidenceItem(id, false))),
+      Promise.all(accessibleOnlyIds.map(id => buildEvidenceItem(id, true)))
+    ]);
+
+    ownedItems.sort((a, b) => Number(a.id) - Number(b.id));
+    accessibleItems.sort((a, b) => Number(a.id) - Number(b.id));
+
+    renderEvidenceList(ownedEl, ownedItems, false);
+    renderEvidenceList(accessibleEl, accessibleItems, true);
+
+  } catch (err) {
+    console.error(err);
+    ownedEl.innerHTML = '<p class="empty-state">Could not load evidence. Make sure contractAddress points to the redeployed contract.</p>';
+    accessibleEl.innerHTML = '<p class="empty-state">Could not load evidence.</p>';
+  }
+}
+
+async function buildEvidenceItem(id, includeOwner) {
+  const item = { id, metadata: "(unable to read)", owner: null };
+  try {
+    item.metadata = await contract.read(id);
+  } catch (err) {
+    console.warn("read failed for id " + id, err);
+  }
+  if (includeOwner) {
+    try {
+      item.owner = await contract.getOwner(id);
+    } catch (err) {
+      console.warn("getOwner failed for id " + id, err);
+    }
+  }
+  return item;
+}
+
+function renderEvidenceList(container, items, showOwner) {
+  if (!items.length) {
+    container.innerHTML = '<p class="empty-state">Nothing here yet.</p>';
+    return;
+  }
+  container.innerHTML = items.map(it => `
+    <div class="evidence-item">
+      <div class="evidence-item-top">
+        <span class="evidence-id">#${it.id}</span>
+        ${showOwner && it.owner ? `<span class="evidence-owner">Owner: ${shortAddr(it.owner)}</span>` : ""}
+      </div>
+      <div class="evidence-meta">${escapeHtml(it.metadata)}</div>
+    </div>
+  `).join("");
 }
 
 </script>
