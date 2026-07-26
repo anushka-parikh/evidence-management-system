@@ -344,17 +344,61 @@ async function connectWallet() {
 }
 
 async function createEvidence() {
-  if (!contract) { alert("Please connect MetaMask first"); return; }
-  try {
-    const text = document.getElementById("evidenceInput").value;
-    showResult("createResult", "Submitting transaction...", "pending");
-    const tx = await contract.create(text);
-    await tx.wait();
-    showResult("createResult", "Evidence created. Tx: " + tx.hash, "success");
-  } catch (error) {
-    console.error(error);
-    showResult("createResult", "Failed: " + (error.reason || error.message), "error");
-  }
+    if (!contract) {
+        alert("Please connect MetaMask first");
+        return;
+    }
+
+    try {
+        const text = document.getElementById("evidenceInput").value;
+
+        showResult("createResult", "Submitting transaction...", "pending");
+
+        const tx = await contract.create(text);
+        const receipt = await tx.wait();
+
+        console.log("Receipt:", receipt);
+
+        let evidenceId = null;
+
+        // Decode logs manually
+        for (const log of receipt.logs) {
+            try {
+                const parsed = contract.interface.parseLog(log);
+
+                console.log(parsed);
+
+                if (parsed.name === "EvidenceCreated") {
+                    evidenceId = parsed.args.id.toString();
+                    break;
+                }
+            } catch (err) {
+                // Ignore logs from other contracts
+            }
+        }
+
+        if (evidenceId !== null) {
+            showResult(
+                "createResult",
+                `Evidence Created Successfully!\n\nEvidence ID: ${evidenceId}\n\nTransaction Hash:\n${tx.hash}`,
+                "success"
+            );
+        } else {
+            showResult(
+                "createResult",
+                `Evidence Created Successfully!\n\nTransaction Hash:\n${tx.hash}\n\n(Could not retrieve Evidence ID)`,
+                "success"
+            );
+        }
+
+    } catch (error) {
+        console.error(error);
+        showResult(
+            "createResult",
+            "Failed: " + (error.reason || error.message),
+            "error"
+        );
+    }
 }
 
 async function readEvidence() {
